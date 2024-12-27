@@ -19,8 +19,8 @@ public class AuctionEvents {
         this.initProducts();
         this.currentProductId = products.stream().mapToInt(Products::getId).min().orElseThrow();
         this.maxProductId = products.stream().mapToInt(Products::getId).max().orElseThrow();
-        this.lock = ; /* 1. How to initialize the ReentrantLock (1 marks) */
-        this.isCurrentBidCompleted = ; /* 2. How to initialize the Condition (1 marks) */
+        this.lock = new ReentrantLock(); /* 1. How to initialize the ReentrantLock (1 marks) */
+        this.isCurrentBidCompleted = lock.newCondition(); /* 2. How to initialize the Condition (1 marks) */
     }
 
     /*
@@ -28,11 +28,12 @@ public class AuctionEvents {
      * no product with id equals to the this.currentProductId, that's mean the
      * auction is over, return null
      */
-    public /* 3. How to thread safe this method? (1 marks) */ Products getCurrentProduct() {
+    public synchronized/* 3. How to thread safe this method? (1 marks) */ Products getCurrentProduct() {
         return products.stream().filter(p -> p.getId() == this.currentProductId).findFirst().orElse(null);
     }
 
     /* 4. Add thread safe in correct place inside this method (4 marks) */
+
     /* 5. Add thread control in correct place inside this method (2 marks) */
     /*
      * 6. Add distributed concurreny control in correct place inside this
@@ -48,9 +49,15 @@ public class AuctionEvents {
      * true
      */
     public boolean placeBid(int id, float bid, Date originalTimestamp) {
+        lcok.lock();
         try {
             // Check if the target price is reached before client placing the bid
             if (this.isTargetPriceReached(id)) {
+                return false;
+            }
+
+            // check if the bid is outdated
+            if (this.isOutDated(id, originalTimestamp)) {
                 return false;
             }
 
@@ -63,6 +70,7 @@ public class AuctionEvents {
             // Check if the target price is reached, if so, set the next product
             if (this.isTargetPriceReached(id)) {
                 this.currentProductId++;
+                isCurrentBidCompleted.signalAll();
             }
 
             // return true for successful bid
@@ -71,6 +79,7 @@ public class AuctionEvents {
             e.printStackTrace();
             return false;
         } finally {
+            lock.unlock();
         }
     }// end of placeBid()
 
@@ -92,6 +101,7 @@ public class AuctionEvents {
         // Validates the target product ID before proceeding
         targetProductId = this.validateProductId(targetProductId);
 
+        lock.lock();
         try {
 
             return this.getCurrentProduct();
@@ -99,6 +109,7 @@ public class AuctionEvents {
             e.printStackTrace();
             return null;
         } finally {
+            lock.unlock();
         }
     }
 

@@ -3,9 +3,11 @@ package pos.src.com.comp4680.pos.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.CollationElementIterator;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -16,7 +18,7 @@ public class POSServer {
         AuctionEvents events = new AuctionEvents();
         try {
             /* 1. How to create ServerSocket and assign to "ssk" object? (2 marks) */
-            ServerSocket ssk = new ServerSocket(12345);
+            ssk = new ServerSocket(12345);
 
             while (true) {
                 /*
@@ -24,18 +26,21 @@ public class POSServer {
                  * need to pass some arguments (2 marks)
                  */
 
-                 Socket _socket = ssk.accept();
-                 system.out.println("Connection started");
-                 new ClientHandler(_socket).started();
+                 
+                Socket skt = _ssk.accept();
+                System.out.println("Connection in");
+                ClientHandler clientHandler = new ClientHandler(skt, events);
+                Thread clientThread = new Thread(clientHandler);
+                clientThread.start();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            e.printStackTrace(); 
         } // end of try-catch
     }// end of main thread
 
 }// end of POSServer
 
-class ClientHandler extends Thread/* 3. How to make ClientHandler become multithread? (1 marks) */ {
+class ClientHandler extends Thread /* 3. How to make ClientHandler become multithread? (1 marks) */ {
 
     private Socket socket = null;
     private AuctionEvents events = null;
@@ -48,7 +53,7 @@ class ClientHandler extends Thread/* 3. How to make ClientHandler become multith
      * 4. When you pass something to contructor in main(), you also need to add the
      * arguments here. (2 marks)
      */ 
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, AuctionEvents events) {
         this.socket = socket;
         this.SetupInOutStreams();
         this.curProduct = null;
@@ -72,6 +77,7 @@ class ClientHandler extends Thread/* 3. How to make ClientHandler become multith
              * need auto flush (3 marks)
              */
             _out = new PrintWriter(_socket.getOutputStream(), true);
+            _in = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,6 +86,7 @@ class ClientHandler extends Thread/* 3. How to make ClientHandler become multith
     private void SendToClient(String msg) {
         try {
             // 7. How to send "msg" to client? (1 marks)
+            _out.println(msg);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -89,6 +96,7 @@ class ClientHandler extends Thread/* 3. How to make ClientHandler become multith
         String cmd = "";
         try {
             // 8. How to get user input from client? (1 marks)
+            cmd =_in.readLine();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -100,7 +108,8 @@ class ClientHandler extends Thread/* 3. How to make ClientHandler become multith
      * inside this method will be executed in a separate thread. Add any annotation
      * needed (2 marks)
      */
-    public void xxx() {
+    @Override
+    public void run () {
         /****************** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ******************/
         /****************** DON'T CHANGE ANYTHING BEYOND THIS LINE ******************/
         /****************** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ******************/
