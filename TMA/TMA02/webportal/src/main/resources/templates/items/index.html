@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout.html}">
+<head>
+    <meta charset="UTF-8">
+    <title>Item Lists</title>
+</head>
+<body>
+<div layout:fragment="customContent">
+    <button class="btn btn-primary" th:onclick="'javascript:window.location=\'' + @{/items/create} + '\';'">Create</button>
+    <table class="table table-striped">
+        <tr>
+            <td>Code</td>
+            <td>Name</td>
+            <td>Description</td>
+            <td>Price</td>
+            <td>Status</td>
+            <td>Actions</td>
+        </tr>
+        <tr th:each="item : ${items}">
+            <td th:text="${item.code}" />
+            <td th:text="${item.name}" />
+            <td th:text="${item.descr}" />
+            <td th:text="${item.price}" />
+            <td th:text="${item.getStatusString()}"></td>
+            <td>
+                <button class="btn btn-warning" th:onclick="'javascript:window.location=\'' + @{/items/edit/{id}(id=${item.id})} + '\';'">Edit</button>
+                <button class="btn btn-danger" th:onclick="'javascript:window.location=\'' + @{/items/delete/{id}(id=${item.id})} + '\';'">Delete</button>
+            </td>            
+        </tr>
+    </table>
+</body>
+</html>
